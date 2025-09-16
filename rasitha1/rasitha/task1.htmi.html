@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather App</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+    input { padding: 10px; width: 200px; }
+    button { padding: 10px; margin: 10px; cursor: pointer; }
+    #result { margin-top: 20px; font-size: 18px; }
+  </style>
+</head>
+<body>
+  <h2>Weather App</h2>
+  <input type="text" id="city" placeholder="Enter city name">
+  <button onclick="getWeather()">Get Weather</button>
+  <div id="result"></div>
+
+  <script>
+    async function getWeather() {
+      const city = document.getElementById("city").value.trim();
+      const apiKey = "✅PUT-YOUR-OPENWEATHERMAP-API-KEY-HERE"; // Replace with your real key
+      const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
+
+      if (!city) {
+        document.getElementById("result").innerText = "Please enter a city name!";
+        return;
+      }
+
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (res.ok) {
+          document.getElementById("result").innerHTML =
+            `🌍 City: ${data.name}<br>🌡 Temp: ${data.main.temp}°C<br>☁ Weather: ${data.weather[0].description}`;
+        } else {
+          document.getElementById("result").innerText = data.message;
+        }
+      } catch (err) {
+        document.getElementById("result").innerText = "⚠ Error fetching data!";
+        console.error(err);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>COVID-19 Data Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    select, #status {
+      margin: 15px;
+      padding: 10px;
+    }
+    canvas {
+      margin: 20px auto;
+      max-width: 600px;
+    }
+  </style>
+</head>
+<body>
+  <h1>COVID-19 Data Dashboard</h1>
+  <select id="countrySelect"></select>
+  <p id="status">Loading data...</p>
+  
+  <canvas id="pieChart"></canvas>
+  <canvas id="lineChart"></canvas>
+
+  <script>
+    const countrySelect = document.getElementById("countrySelect");
+    const statusText = document.getElementById("status");
+
+    let pieChart, lineChart;
+
+    // Step 1: Fetch list of countries
+    async function loadCountries() {
+      const res = await fetch("https://disease.sh/v3/covid-19/countries");
+      const data = await res.json();
+
+      countrySelect.innerHTML = data.map(
+        c => `<option value="${c.country}">${c.country}</option>`
+      ).join("");
+
+      statusText.textContent = "Select a country to view stats.";
+      
+      // Auto-load first country
+      loadCountryData(data[0].country);
+    }
+
+    // Step 2: Fetch data for selected country
+    async function loadCountryData(country) {
+      statusText.textContent = `Loading data for ${country}...`;
+
+      const res = await fetch(`https://disease.sh/v3/covid-19/countries/${country}`);
+      const data = await res.json();
+
+      statusText.textContent = `Showing data for ${country}`;
+
+      // Pie chart (cases, recovered, deaths)
+      const pieData = {
+        labels: ["Cases", "Recovered", "Deaths"],
+        datasets: [{
+          data: [data.cases, data.recovered, data.deaths],
+          backgroundColor: ["#f39c12", "#27ae60", "#c0392b"]
+        }]
+      };
+
+      if (pieChart) pieChart.destroy();
+      pieChart = new Chart(document.getElementById("pieChart"), {
+        type: "pie",
+        data: pieData
+      });
+
+      // Line chart (cases timeline)
+      const historyRes = await fetch(`https://disease.sh/v3/covid-19/historical/${country}?lastdays=30`);
+      const historyData = await historyRes.json();
+      const casesTimeline = historyData.timeline ? historyData.timeline.cases : {};
+
+      if (lineChart) lineChart.destroy();
+      lineChart = new Chart(document.getElementById("lineChart"), {
+        type: "line",
+        data: {
+          labels: Object.keys(casesTimeline),
+          datasets: [{
+            label: "Cases over time",
+            data: Object.values(casesTimeline),
+            borderColor: "#2980b9",
+            fill: false
+          }]
+        }
+      });
+    }
+
+    countrySelect.addEventListener("change", (e) => {
+      loadCountryData(e.target.value);
+    });
+
+    loadCountries();
+  </script>
+</body>
+</html>
